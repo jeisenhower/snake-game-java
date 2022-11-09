@@ -83,7 +83,7 @@ public class SnakeFrame extends JFrame {
 
 
             }
-        }, 3, frameRate);
+        }, 80, frameRate);
 
 
        repaintTimer.scheduleAtFixedRate(new TimerTask() {
