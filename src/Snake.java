@@ -45,7 +45,7 @@ public class Snake {
 
     public boolean isOutOfBounds() {
         Dot head = body.get(0);
-        if (head.col > cols || head.row > rows || head.col < 0 || head.row < 0) {
+        if (head.col > cols-1 || head.row > rows-1 || head.col < 0 || head.row < 0) {
             return true;
         }
         return false;
