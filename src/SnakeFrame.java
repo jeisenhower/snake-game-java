@@ -1,24 +1,27 @@
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class SnakeFrame extends JFrame {
-    long frameRate;
-    long previousRenderedTime;
+    int frameRate;
     SnakeGamePanel gamePanel;
     Timer timer;
     Timer repaintTimer;
 
-    SnakeFrame(int cols, int rows, int dotSize, long frameRate) {
+    SnakeFrame(int width, int height, int dotSize, int frameRate) {
         super();
-        super.setLayout(null);
-        super.setSize((cols)*dotSize, (rows+1)*dotSize);
+
+        gamePanel = new SnakeGamePanel(width, height, dotSize);
+
+        super.setSize(width, height);
         super.setTitle("Snake");
         super.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        super.setContentPane(gamePanel);
+        super.pack();
+        super.setLayout(null);
+        super.setLocationRelativeTo(null);
         super.setVisible(true);
-        gamePanel = new SnakeGamePanel(cols, rows, dotSize);
         super.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -39,21 +42,21 @@ public class SnakeFrame extends JFrame {
                 }
             }
         });
-        super.add(gamePanel);
 
         this.frameRate = frameRate;
-        timer = new Timer();
-        repaintTimer = new Timer();
-
     }
 
     public void play() {
 
+        gamePanel.running = true;
+
         // Initialize the snake to be moving down
         gamePanel.snakeDirection = Direction.DOWN;
 
+        timer = new Timer(frameRate, gamePanel);
+        timer.start();
 
-        timer.scheduleAtFixedRate(new TimerTask() {
+        /*timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 Direction d = gamePanel.snakeDirection;
@@ -91,7 +94,7 @@ public class SnakeFrame extends JFrame {
            public void run() {
                repaint();
            }
-       }, 0, frameRate);
+       }, 0, 5);*/
 
         //for (int i=0; i<20; i++) {
         /*while (true) {

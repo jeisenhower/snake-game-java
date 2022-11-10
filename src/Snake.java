@@ -10,45 +10,22 @@ enum Direction {
 
 public class Snake {
     int snakeLength;
-    ArrayList<Dot> body;
-
-    //Direction direction;
-
-    int cols;
-    int rows;
-
+    Dot[] body;
 
     public Snake(int cols, int rows) {
-        this.cols = cols;
-        this.rows = rows;
         this.snakeLength = 5;
-        this.body = new ArrayList<Dot>();
+        this.body = new Dot[snakeLength];
 
-        this.body.add(new Dot(2, 3));
+        for (int i=0; i<snakeLength; i++) {
+            body[i] = new Dot(i+2, 3);
+        }
+
+
+        /*this.body.add(new Dot(2, 3));
         this.body.add(new Dot(3, 3));
         this.body.add(new Dot(4, 3));
         this.body.add(new Dot(4, 4));
-        this.body.add(new Dot(5, 4));
-    }
-
-
-    public boolean isOnSelf() {
-        Dot head = this.body.get(0);
-        for (int i=1; i<this.body.size(); i++) {
-            Dot d = this.body.get(i);
-            if (head.col == d.col && head.row == d.row) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean isOutOfBounds() {
-        Dot head = body.get(0);
-        if (head.col > cols-1 || head.row > rows-1 || head.col < 0 || head.row < 0) {
-            return true;
-        }
-        return false;
+        this.body.add(new Dot(5, 4));*/
     }
 
 
@@ -74,6 +51,8 @@ public class Snake {
         }
         return false;
     }
+
+
 
 
 }

@@ -1,43 +1,52 @@
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.Random;
 
-public class SnakeGamePanel extends JPanel {
+public class SnakeGamePanel extends JPanel implements ActionListener {
     int dotSize;
     Snake snake;
     int cols;
     int rows;
+    int height;
+    int width;
     int originX;
     int originY;
+    int score;
+
+    boolean running = false;
 
     Direction snakeDirection;
 
     Dot fruit;
 
+    // TODO: Add a JPanel with transparent background that displays the current score at the top of the window.
 
-    public SnakeGamePanel(int cols, int rows, int dotSize) {
+    public SnakeGamePanel(int width, int height, int dotSize) {
+        score = 0;
+        this.width = width;
+        this.height = height;
         this.snakeDirection = Direction.DOWN;
         this.dotSize = dotSize;
         this.originX = 0;
         this.originY = 0;
-        this.cols = cols;
-        this.rows = rows;
+        this.cols = width/dotSize;
+        this.rows = height/dotSize;
 
 
 
-        this.fruit = generateFruit(this.cols, this.rows);
+        this.fruit = generateFruit();
 
-        setBorder(BorderFactory.createEmptyBorder(30, 0, 0, 0));
         //setPreferredSize(new Dimension(cols*dotSize + dotSize, rows*dotSize + dotSize));
         //setSize(new Dimension(cols*dotSize + dotSize, rows*dotSize + dotSize));
-        setPreferredSize(new Dimension(cols*dotSize, rows*dotSize));
-        setSize(new Dimension(cols*dotSize, rows*dotSize));
+        setPreferredSize(new Dimension(width, height));
+        setSize(new Dimension(width, height));
 
         snake = new Snake(this.cols, this.rows);
     }
 
-    public Dot generateFruit(int cols, int rows) {
+    public Dot generateFruit() {
 
         Random r = new Random();
         int low = 2;
@@ -56,135 +65,171 @@ public class SnakeGamePanel extends JPanel {
 
     @Override
     protected void paintComponent(Graphics g) {
-        Graphics2D g2 = (Graphics2D) g;
-        //drawGrid(g2);
-        drawSnake(g2);
-        //drawBoardEdges(g2);
-        drawFruit(g2);
+        super.paintComponent(g);
+        //drawGrid(g);
+        drawSnake(g);
+        drawFruit(g);
     }
 
-    protected void drawGrid(Graphics2D g2) {
-        g2.setColor(Color.gray);
+    protected void drawGrid(Graphics g) {
+        g.setColor(Color.gray);
 
-        for (int row=0; row<rows+1; row++) {
-            g2.drawLine(originX, originY + row*dotSize, originX + cols*dotSize, originY + row*dotSize);
-        }
-
-        for (int col=0; col<cols+1; col++) {
-            g2.drawLine(originX + col*dotSize, originY, originX + col*dotSize, originY + rows*dotSize);
+        for (int i=0; i<height/dotSize; i++) {
+            g.drawLine(i*dotSize, originY, i*dotSize, height);
+            g.drawLine(originX, i*dotSize, width, i*dotSize);
         }
     }
 
-    protected void drawBoardEdges(Graphics2D g2) {
-        g2.setColor(Color.gray);
-
-        // Horizontal bounding lines
-        //g2.drawLine(originX, originY, originX + cols*dotSize, originY);
-        g2.drawLine(originX, originY + rows*dotSize, originX + cols*dotSize, originY + rows*dotSize);
-
-        // Vertical bounding lines
-        //g2.drawLine(originX, originY, originX, originY + rows*dotSize);
-        g2.drawLine(originX + cols*dotSize, originY, originX + cols*dotSize, originY + rows*dotSize);
-    }
-
-    protected void drawSnake(Graphics2D g2) {
-        if (snake.body.isEmpty()) {
+    protected void drawSnake(Graphics g) {
+        if (snake.body.length == 0) {
             return;
         }
 
-        g2.setColor(Color.GREEN);
-        Dot head = snake.body.get(0);
-        g2.fillRect(originX + head.col*dotSize, originY + head.row*dotSize, dotSize, dotSize);
+        g.setColor(Color.GREEN);
+        Dot head = snake.body[0];
+        g.fillRect(originX + head.col*dotSize, originY + head.row*dotSize, dotSize, dotSize);
 
-        g2.setColor(Color.BLUE);
-        for (int i=1; i<snake.body.size(); i++) {
-            Dot dot = snake.body.get(i);
-            g2.fillRect(originX + dot.col*dotSize, originY + dot.row*dotSize, dotSize, dotSize);
+        g.setColor(Color.BLUE);
+        for (int i=1; i<snake.body.length; i++) {
+            Dot dot = snake.body[i];
+            g.fillRect(originX + dot.col*dotSize, originY + dot.row*dotSize, dotSize, dotSize);
         }
     }
 
-    protected void drawFruit(Graphics2D g2) {
+    protected void drawFruit(Graphics g) {
         if (fruit == null) {
             return;
         }
 
-        g2.setColor(Color.RED);
-        g2.fillRect(originX + fruit.col*dotSize, originY + fruit.row*dotSize, dotSize, dotSize);
+        g.setColor(Color.RED);
+        g.fillOval(originX + fruit.col*dotSize, originY + fruit.row*dotSize, dotSize, dotSize);
+    }
+
+
+    public void moveSnake() {
+        if (snakeDirection == Direction.UP) {
+            moveSnakeUp();
+        } else if (snakeDirection == Direction.DOWN) {
+            moveSnakeDown();
+        } else if (snakeDirection == Direction.LEFT) {
+            moveSnakeLeft();
+        } else if (snakeDirection == Direction.RIGHT) {
+            moveSnakeRight();
+        }
+
+        // If snake is on itself, end the game and break out of the loop
+        if (isOnSelf()) {
+            System.out.println("Snake ate itself! Game over");
+            running = false;
+        }
+
+        if (isOutOfBounds()) {
+            System.out.println("Snake is out of bounds! Game over");
+            running = false;
+        }
     }
 
 
     public void updateSnake(Dot newHead) {
-        ArrayList<Dot> newSnakeBody = new ArrayList<>();
-        // Add the new head to the new snake
-        newSnakeBody.add(newHead);
-
-        // Check if the snake is out of bounds
-        /*if (newHead.col > cols || newHead.row > rows || newHead.col < 0 || newHead.row < 0) {
-            // We know the snake is out of bounds, so simply move the snake in the opposite direction of which it was going,
-            // which will cause the snake to eat itself and end the game.
-            newHead.col = snake.body.get(0).col;
-            newHead.row = snake.body.get(0).row;
-        }*/
-
         // Check if the new head is on the dot that is the prize. If it is, append the new head to the start of the snake
-        if (newHead.col == fruit.col && newHead.row == fruit.row) {
-            // Add to the snake, so append the new head to the old snake
-            newSnakeBody.addAll(snake.body);
-            // Redraw the fruit somewhere else on the board
-            fruit = generateFruit(cols, rows);
-        } else {
-            for (int i=0; i<snake.body.size()-1; i++) {
-                newSnakeBody.add(snake.body.get(i));
+        if (isOnFruit()) {
+            // Add to the snake, so append the new head to the old array
+            Dot[] newBody = new Dot[snake.snakeLength+1];
+            newBody[0] = newHead;
+            for (int i=0; i<snake.snakeLength; i++) {
+                newBody[i+1] = snake.body[i];
             }
+            snake.body = newBody;
+            snake.snakeLength++;
+            fruit = generateFruit();
+        } else {
+            // The snake should keep moving and not add any length to its body
+            for (int i=snake.snakeLength-1; i>0; i--) {
+                snake.body[i] = snake.body[i-1];
+            }
+            snake.body[0] = newHead;
         }
-
-
-        snake.body = newSnakeBody;
-
     }
 
 
     public void moveSnakeLeft() {
-        if (snake.body.isEmpty()) {
+        if (snake.body.length == 0) {
             return;
         }
 
-        Dot newHead = new Dot(snake.body.get(0).col-1, snake.body.get(0).row);
+        Dot newHead = new Dot(snake.body[0].col-1, snake.body[0].row);
         updateSnake(newHead);
 
 
     }
 
     public void moveSnakeRight() {
-        if (snake.body.isEmpty()) {
+        if (snake.body.length == 0) {
             return;
         }
 
-        Dot newHead = new Dot(snake.body.get(0).col+1, snake.body.get(0).row);
+        Dot newHead = new Dot(snake.body[0].col+1, snake.body[0].row);
         updateSnake(newHead);
     }
 
     public void moveSnakeDown() {
-        if (snake.body.isEmpty()) {
+        if (snake.body.length == 0) {
             return;
         }
 
-        Dot newHead = new Dot(snake.body.get(0).col, snake.body.get(0).row+1);
+        Dot newHead = new Dot(snake.body[0].col, snake.body[0].row+1);
         updateSnake(newHead);
 
     }
 
     public void moveSnakeUp() {
-        if (snake.body.isEmpty()) {
+        if (snake.body.length == 0) {
             return;
         }
 
-        Dot newHead = new Dot(snake.body.get(0).col, snake.body.get(0).row-1);
+        Dot newHead = new Dot(snake.body[0].col, snake.body[0].row-1);
         updateSnake(newHead);
     }
 
+    // Checks if the body is intersecting itself
+    public boolean isOnSelf() {
+        Dot head = snake.body[0];
+        for (int i=1; i<snake.body.length; i++) {
+            Dot d = snake.body[i];
+            if (head.col == d.col && head.row == d.row) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-    // Checks if the head of the snake is intersecting any dots that make up its body.
+    public boolean isOutOfBounds() {
+        Dot head = snake.body[0];
+        if (head.col > cols-1 || head.row > rows-1 || head.col < 0 || head.row < 0) {
+            return true;
+        }
+        return false;
+    }
 
+    public boolean isOnFruit() {
+        if (snake.body[0].col == fruit.col && snake.body[0].row == fruit.row) {
+            score++;
+            System.out.println("You ate the fruit! Current Score: " + score);
+            return true;
+        }
+        return false;
+    }
+
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (running) {
+            moveSnake();
+            if (isOnSelf() || isOutOfBounds()) {
+                running = false;
+            }
+        }
+        repaint();
+    }
 
 }
